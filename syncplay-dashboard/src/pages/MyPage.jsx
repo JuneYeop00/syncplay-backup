@@ -2,11 +2,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { User, LogOut, Heart, PlayCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-// 무비 페이지에서 사용하던 TMDB API 연동 정보 추가
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 
-// 로컬 경로로 맞춘 로고 데이터 유지
 const OTT_LOGOS = {
   "Netflix": "/logos/netflix.png",
   "TVING": "/logos/tving.png",
@@ -23,12 +21,18 @@ const OTT_LIST = [
   { id: 'wavve', name: 'Wavve', color: 'bg-blue-500', gradient: 'linear-gradient(135deg, #2481F4, #185CBF)', shadowColor: 'rgba(36, 129, 244, 0.4)' },
 ];
 
-const MyPage = () => {
+const MyPage = ({ isDarkMode }) => {
   const navigate = useNavigate();
   const [userInfo, setUserInfo] = useState({ name: '', email: '' });
   const [recentHistory, setRecentHistory] = useState([]);
   const [mySubscriptions, setMySubscriptions] = useState([]);
   const [wishlist, setWishlist] = useState([]);
+
+  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
+  const textSecondary = isDarkMode ? "text-slate-500" : "text-slate-500";
+  const cardClass = isDarkMode 
+    ? "bg-white/5 backdrop-blur-3xl border-white/10 shadow-2xl" 
+    : "bg-white/70 backdrop-blur-xl border-slate-200 shadow-lg";
 
   useEffect(() => {
     const savedUser = JSON.parse(localStorage.getItem('user'));
@@ -38,16 +42,12 @@ const MyPage = () => {
       fetchWishlist(savedUser.email);
     }
 
-    // TMDB API 로직이 통합된 새로운 fetchHistory 함수
     const fetchHistory = async () => {
       try {
         const response = await fetch('http://localhost:8080/api/history');
         if (response.ok) {
           const data = await response.json();
-          // 무비 페이지와 다르게 마이페이지는 3개만 필요하므로 먼저 자릅니다. (통신 낭비 방지)
           const top3History = data.reverse().slice(0, 3);
-
-          // 3개의 시청 기록에 대해 TMDB에서 포스터를 검색합니다.
           const enrichedHistory = await Promise.all(
               top3History.map(async (item) => {
                 try {
@@ -57,16 +57,13 @@ const MyPage = () => {
                   );
                   const tmdbData = await tmdbResp.json();
                   const detail = tmdbData.results?.find(res => res.media_type === 'movie' || res.media_type === 'tv') || tmdbData.results?.[0] || {};
-
                   return {
                     ...item,
-                    // TMDB에서 찾은 포스터 주소를 연결합니다.
                     posterUrl: detail.poster_path ? `https://image.tmdb.org/t/p/w500${detail.poster_path}` : null,
                     mediaType: detail.media_type || (item.subTitle ? 'tv' : 'movie')
                   };
                 } catch (e) {
-                  console.error("TMDB 데이터 로드 에러:", e);
-                  return item; // 에러 나면 기존 데이터라도 반환
+                  return item;
                 }
               })
           );
@@ -104,29 +101,16 @@ const MyPage = () => {
   };
 
   const toggleSubscription = async (ottId) => {
-    if (!userInfo.email) {
-      alert("이메일 정보가 없어 구독 상태를 저장할 수 없습니다.");
-      return;
-    }
-
-    let updatedSubs;
-    if (mySubscriptions.includes(ottId)) {
-      updatedSubs = mySubscriptions.filter(id => id !== ottId);
-    } else {
-      updatedSubs = [...mySubscriptions, ottId];
-    }
-
+    if (!userInfo.email) return;
+    let updatedSubs = mySubscriptions.includes(ottId) ? mySubscriptions.filter(id => id !== ottId) : [...mySubscriptions, ottId];
     setMySubscriptions(updatedSubs);
-
     try {
       await fetch(`http://localhost:8080/api/users/subscriptions?email=${encodeURIComponent(userInfo.email)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscriptions: updatedSubs })
       });
-    } catch (error) {
-      console.error("구독 정보 업데이트 실패:", error);
-    }
+    } catch (error) { console.error(error); }
   };
 
   const handleLogout = () => {
@@ -140,54 +124,45 @@ const MyPage = () => {
   const filterWhite = { filter: 'brightness(0) invert(1)' };
 
   return (
-      <div className="w-full">
-        <div className="max-w-4xl">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8 flex items-center gap-6">
-            <div className="w-24 h-24 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg">
-              <User size={48} />
+      <div className="w-full animate-in fade-in slide-in-from-bottom-6 duration-1000">
+        <div className="max-w-4xl space-y-12">
+          {/* 사용자 정보 카드 */}
+          <div className={`${cardClass} rounded-[3rem] p-12 flex items-center gap-10 group relative overflow-hidden border`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+            <div className="w-32 h-32 bg-gradient-to-br from-indigo-500 to-purple-700 rounded-[2.5rem] flex items-center justify-center text-white shadow-[0_0_30px_rgba(79,70,229,0.3)] group-hover:scale-105 transition-transform duration-500 shrink-0">
+              <User size={64} className="drop-shadow-lg" />
             </div>
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900">{userInfo.name || 'gemini il'} 님</h2>
-              <p className="text-gray-500 font-medium">이메일: {userInfo.email || '정보 없음'}</p>
+            <div className="relative z-10">
+              <div className={`inline-block px-3 py-1 rounded-lg ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-blue-50 border-blue-100 text-blue-600'} text-[10px] font-black uppercase tracking-[0.2em] mb-3`}>정회원</div>
+              <h2 className={`text-4xl font-black ${textPrimary} mb-2 tracking-tight`}>{userInfo.name || '사용자'} 님</h2>
+              <p className={`${textSecondary} font-bold tracking-wider text-sm`}>{userInfo.email || '이메일 정보 없음'}</p>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-8">
-            <h3 className="text-lg font-bold text-gray-800 mb-4">내 구독 플랫폼 관리</h3>
-            <p className="text-sm text-gray-500 mb-6">현재 구독 중인 OTT를 선택해두시면, 검색 시 시청 가능한 플랫폼을 빠르게 안내해 드립니다.</p>
-
-            <div className="flex flex-wrap gap-5 justify-center">
+          {/* 구독 플랫폼 관리 */}
+          <div className={`${cardClass} rounded-[3rem] p-12 border`}>
+            <div className="flex justify-between items-center mb-10">
+              <div>
+                <h3 className={`text-2xl font-black ${textPrimary} tracking-tight`}>OTT 구독 관리</h3>
+                <p className={`text-sm ${textSecondary} font-bold mt-1`}>이용 중인 서비스를 선택하여 검색 결과를 최적화하세요.</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-8 justify-center md:justify-start">
               {OTT_LIST.map((ott) => {
                 const isSubscribed = mySubscriptions.includes(ott.id);
-                const logoUrl = OTT_LOGOS[ott.name] || "https://via.placeholder.com/32?text=OTT";
-
                 return (
                     <button
                         key={ott.id}
                         onClick={() => toggleSubscription(ott.id)}
                         title={ott.name}
-                        className={`flex items-center justify-center relative p-1 rounded-2xl transition-all duration-300 transform hover:scale-105 shadow-inner
-                    ${isSubscribed ? `border-transparent shadow-lg` : 'bg-white border-2 border-gray-100 hover:border-gray-200'}`}
-                        style={{
-                          width: '80px',
-                          height: '80px',
-                          ...(isSubscribed ? {
-                            background: ott.gradient,
-                            boxShadow: `0 10px 15px -3px ${ott.shadowColor}, 0 4px 6px -2px ${ott.shadowColor}`
-                          } : {})
-                        }}
+                        className={`flex items-center justify-center relative p-3 rounded-[2.2rem] transition-all duration-700 transform hover:scale-110 shadow-2xl ${isSubscribed ? `border-transparent` : isDarkMode ? 'bg-white/5 border border-white/10 hover:border-white/30' : 'bg-slate-50 border border-slate-200 hover:border-slate-300'}`}
+                        style={{ width: '100px', height: '100px', ...(isSubscribed ? { background: ott.gradient, boxShadow: `0 20px 40px -10px ${ott.shadowColor}` } : {}) }}
                     >
-                      <img
-                          src={logoUrl}
-                          alt={`${ott.name} 로고`}
-                          className="w-full h-full object-contain p-1.5"
-                          style={isSubscribed ? filterWhite : {}}
-                      />
+                      <img src={OTT_LOGOS[ott.name]} alt={ott.name} className={`w-full h-full object-contain p-2 ${isDarkMode ? 'filter brightness-110' : ''}`} style={isSubscribed ? filterWhite : {}} />
                       {isSubscribed && (
-                          <CheckCircle2
-                              size={18}
-                              className="absolute -bottom-1 -right-1 text-white bg-green-500 rounded-full p-0.5 shadow-sm border-2 border-white"
-                          />
+                          <div className={`absolute -top-2 -right-2 bg-green-500 text-white rounded-2xl p-1.5 shadow-[0_0_15px_rgba(34,197,94,0.5)] border-2 ${isDarkMode ? 'border-[#020617]' : 'border-white'} animate-in zoom-in-50`}>
+                            <CheckCircle2 size={16} />
+                          </div>
                       )}
                     </button>
                 );
@@ -195,60 +170,68 @@ const MyPage = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-4 text-pink-500">
-                <Heart size={20} className="fill-pink-500" />
-                <span className="font-bold">찜한 콘텐츠 ({wishlist.length})</span>
+          {/* 찜 및 기록 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+            <div className={`${cardClass} p-10 rounded-[3rem] border`}>
+              <div className="flex items-center gap-4 mb-8">
+                <div className={`w-12 h-12 rounded-2xl ${isDarkMode ? 'bg-pink-500/10 border-pink-500/20' : 'bg-pink-50 border-pink-100'} flex items-center justify-center text-pink-500`}>
+                  <Heart size={24} className={isDarkMode ? "fill-pink-500/20" : ""} />
+                </div>
+                <span className={`text-xl font-black ${textPrimary} tracking-tight`}>찜한 콘텐츠 ({wishlist.length})</span>
               </div>
               {wishlist.length > 0 ? (
-                  <div className="space-y-4 max-h-64 overflow-y-auto pr-2">
+                  <div className="space-y-5 max-h-[450px] overflow-y-auto pr-4 scrollbar-hide">
                     {wishlist.map((item) => (
-                        <div key={item.id} className="flex items-center gap-4 group cursor-pointer" onClick={() => navigate(`/search?q=${encodeURIComponent(item.title)}`)}>
-                          <img src={item.posterUrl || 'https://via.placeholder.com/100x150?text=No+Image'} className="w-12 h-16 object-cover rounded-lg shadow-sm" alt="poster" />
+                        <div key={item.id} className={`flex items-center gap-6 group cursor-pointer p-3 rounded-[1.5rem] ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'} transition-all`} onClick={() => navigate(`/search?q=${encodeURIComponent(item.title)}`)}>
+                          <img src={item.posterUrl || 'https://via.placeholder.com/100x150?text=No+Image'} className={`w-16 h-24 object-cover rounded-2xl shadow-2xl border ${isDarkMode ? 'border-white/5' : 'border-slate-200'} group-hover:scale-105 transition-transform`} alt="poster" />
                           <div className="flex flex-col">
-                            <span className="font-bold text-gray-800 text-sm line-clamp-1 group-hover:text-pink-600 transition-colors">{item.title}</span>
-                            <span className="text-xs text-gray-400 mt-1">{item.releaseDate?.split('-')[0] || '미상'} · {item.mediaType?.toUpperCase()}</span>
+                            <span className={`font-black ${textPrimary} text-lg line-clamp-1 group-hover:text-indigo-500 transition-colors tracking-tight`}>{item.title}</span>
+                            <span className={`text-xs ${textSecondary} font-bold mt-2 uppercase tracking-widest`}>{item.releaseDate?.split('-')[0]} <span className="mx-2 opacity-30">•</span> {item.mediaType}</span>
                           </div>
                         </div>
                     ))}
                   </div>
               ) : (
-                  <p className="text-gray-400 text-sm text-center py-10">찜한 영화가 없습니다.</p>
+                  <div className={`text-center py-24 ${isDarkMode ? 'bg-white/20' : 'bg-slate-50'} rounded-[2.5rem] border border-dashed ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                    <p className={`${textSecondary} font-black text-sm tracking-widest`}>저장된 콘텐츠가 없습니다</p>
+                  </div>
               )}
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-2 mb-4 text-blue-500">
-                <PlayCircle size={20} />
-                <span className="font-bold">최근 시청 기록</span>
+            <div className={`${cardClass} p-10 rounded-[3rem] border`}>
+              <div className="flex items-center gap-4 mb-8">
+                <div className={`w-12 h-12 rounded-2xl ${isDarkMode ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-blue-50 border-blue-100'} flex items-center justify-center text-indigo-400`}>
+                  <PlayCircle size={24} />
+                </div>
+                <span className={`text-xl font-black ${textPrimary} tracking-tight`}>최근 시청 기록</span>
               </div>
               {recentHistory.length > 0 ? (
-                  <div className="space-y-4">
+                  <div className="space-y-5">
                     {recentHistory.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between group cursor-pointer" onClick={() => navigate(item.subTitle ? '/tv' : '/movies')}>
-                          <div className="flex items-center gap-4">
-                            {/* 포스터 이미지가 연결되어 잘 나오게 됩니다. */}
-                            <img src={item.posterUrl || 'https://via.placeholder.com/100x150?text=No+Image'} className="w-12 h-16 object-cover rounded-lg shadow-sm" alt="poster" />
+                        <div key={item.id} className={`flex items-center justify-between group cursor-pointer p-3 rounded-[1.5rem] ${isDarkMode ? 'hover:bg-white/5' : 'hover:bg-slate-50'} transition-all`} onClick={() => navigate(item.subTitle ? '/tv' : '/movies')}>
+                          <div className="flex items-center gap-6">
+                            <img src={item.posterUrl || 'https://via.placeholder.com/100x150?text=No+Image'} className={`w-16 h-24 object-cover rounded-2xl shadow-2xl border ${isDarkMode ? 'border-white/5' : 'border-slate-200'} group-hover:scale-105 transition-transform`} alt="poster" />
                             <div className="flex flex-col">
-                              <span className="font-semibold text-gray-800 text-sm line-clamp-1 group-hover:text-blue-600 transition-colors">{item.title}</span>
-                              <span className="text-xs text-gray-500 mt-1">
-                          {item.subTitle || '영화'} · <span className="text-blue-600 font-medium">{item.progress}%</span> 시청
-                        </span>
+                              <span className={`font-black ${textPrimary} text-lg line-clamp-1 group-hover:text-indigo-400 transition-colors tracking-tight`}>{item.title}</span>
+                              <span className={`text-xs ${textSecondary} font-bold mt-2 uppercase tracking-widest`}>
+                                {item.subTitle || '영화'} <span className="mx-2 opacity-30">|</span> <span className="text-indigo-400">{item.progress}% 시청 중</span>
+                              </span>
                             </div>
                           </div>
-                          <Clock size={16} className="text-gray-300 group-hover:text-blue-500 transition-colors ml-4 shrink-0" />
+                          <Clock size={20} className={`${isDarkMode ? 'text-slate-700' : 'text-slate-300'} group-hover:text-indigo-400 transition-colors shrink-0`} />
                         </div>
                     ))}
                   </div>
               ) : (
-                  <p className="text-gray-400 text-sm">시청 중인 콘텐츠가 없습니다.</p>
+                  <div className={`text-center py-24 ${isDarkMode ? 'bg-white/20' : 'bg-slate-50'} rounded-[2.5rem] border border-dashed ${isDarkMode ? 'border-white/10' : 'border-slate-200'}`}>
+                    <p className={`${textSecondary} font-black text-sm tracking-widest`}>시청 기록이 없습니다</p>
+                  </div>
               )}
             </div>
           </div>
 
-          <button onClick={handleLogout} className="flex items-center gap-2 px-6 py-3 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all active:scale-95 shadow-sm">
-            <LogOut size={20} /> 로그아웃
+          <button onClick={handleLogout} className={`flex items-center gap-4 px-10 py-5 ${isDarkMode ? 'bg-white/5 text-slate-400 border-white/10 shadow-2xl' : 'bg-red-50 text-red-600 border-red-100 shadow-md'} rounded-2xl font-black text-xs hover:bg-red-500 hover:text-white transition-all active:scale-95 border group`}>
+            <LogOut size={20} className="group-hover:-translate-x-1 transition-transform" /> 로그아웃 하기
           </button>
         </div>
       </div>

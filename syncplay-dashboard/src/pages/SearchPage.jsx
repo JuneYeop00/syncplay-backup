@@ -6,7 +6,7 @@ const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const API_BASE_URL = 'http://localhost:8080';
 
-const SearchPage = () => {
+const SearchPage = ({ isDarkMode }) => {
   const [searchParams] = useSearchParams();
   const query = searchParams.get('q') || '';
   const navigate = useNavigate();
@@ -19,6 +19,12 @@ const SearchPage = () => {
 
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userEmail = currentUser?.email || '';
+
+  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
+  const textSecondary = isDarkMode ? "text-slate-400" : "text-slate-500";
+  const cardClass = isDarkMode 
+    ? "bg-white/5 backdrop-blur-3xl border-white/10 shadow-2xl hover:bg-white/10" 
+    : "bg-white/70 backdrop-blur-xl border-slate-200 shadow-lg hover:bg-white/90";
 
   useEffect(() => {
     if (!userEmail) return;
@@ -102,9 +108,7 @@ const SearchPage = () => {
   };
 
   const getSubscribed = (providers) => providers.filter(p => p.status === 'SUBSCRIBED');
-  const getRequired = (providers) => providers.filter(p => p.status === 'PURCHASE_REQUIRED');
 
-  // 디즈니와 쿠팡을 메인 홈으로 원상 복구한 접속 링크 생성 함수
   const handlePlayDirectly = (item) => {
     const subscribed = getSubscribed(item.providerStatuses);
     if (subscribed.length === 0) return;
@@ -112,103 +116,105 @@ const SearchPage = () => {
     const platformName = subscribed[0].providerName.toLowerCase().replace(/\s/g, '');
     const encodedTitle = encodeURIComponent(item.title);
     
-    // 기본 검색용 구글 주소
     let targetUrl = `https://www.google.com/search?q=${encodedTitle}+보러가기`;
 
-    if (platformName.includes('netflix')) {
-      targetUrl = `https://www.netflix.com/search?q=${encodedTitle}`;
-    } else if (platformName.includes('tving')) {
-      targetUrl = `https://www.tving.com/search?keyword=${encodedTitle}`;
-    } else if (platformName.includes('wavve')) {
-      targetUrl = `https://www.wavve.com/search?searchWord=${encodedTitle}`;
-    } else if (platformName.includes('coupang')) {
-      // 쿠팡플레이 에러 방지 -> 기본 접속 주소로 원상 복구
-      targetUrl = `https://www.coupangplay.com`;
-    } else if (platformName.includes('disney')) {
-      // 디즈니플러스 에러 방지 -> 기본 접속 주소로 원상 복구
-      targetUrl = `https://www.disneyplus.com`; 
-    } else if (platformName.includes('watcha')) {
-      targetUrl = `https://watcha.com/search?query=${encodedTitle}`;
-    }
+    if (platformName.includes('netflix')) targetUrl = `https://www.netflix.com/search?q=${encodedTitle}`;
+    else if (platformName.includes('tving')) targetUrl = `https://www.tving.com/search?keyword=${encodedTitle}`;
+    else if (platformName.includes('wavve')) targetUrl = `https://www.wavve.com/search?searchWord=${encodedTitle}`;
+    else if (platformName.includes('coupang')) targetUrl = `https://www.coupangplay.com`;
+    else if (platformName.includes('disney')) targetUrl = `https://www.disneyplus.com`; 
+    else if (platformName.includes('watcha')) targetUrl = `https://watcha.com/search?query=${encodedTitle}`;
 
     window.open(targetUrl, '_blank');
   };
 
   return (
-    <div className="w-full max-w-6xl mx-auto p-4 relative">
-      <div className="flex items-center gap-4 mb-10">
-        <button onClick={() => navigate(-1)} className="p-4 bg-white rounded-2xl shadow-sm hover:bg-gray-50 text-gray-600 transition-colors border border-gray-100 shrink-0">
+    <div className="w-full max-w-6xl mx-auto p-4 relative animate-in fade-in duration-1000">
+      <div className="flex items-center gap-6 mb-16">
+        <button onClick={() => navigate(-1)} className={`p-6 backdrop-blur-3xl rounded-[2.2rem] shadow-2xl transition-all border shrink-0 ${isDarkMode ? 'bg-white/5 text-slate-400 hover:text-white border-white/10' : 'bg-white text-slate-600 hover:bg-slate-50 border-slate-200'}`}>
           <ArrowLeft size={24} />
         </button>
-        <div className="flex-1 bg-white rounded-2xl px-6 py-4 flex items-center border border-gray-200 shadow-sm focus-within:border-blue-400 focus-within:ring-4 focus-within:ring-blue-50 transition-all">
-          <Search size={24} className="text-blue-500 mr-4 shrink-0" />
-          <input type="text" className="bg-transparent text-lg outline-none w-full font-medium text-gray-900 placeholder:text-gray-400" value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={handleSearch} placeholder="영화나 TV 프로그램 제목을 검색 후 Enter를 누르세요..." autoFocus />
+        <div className={`flex-1 backdrop-blur-3xl rounded-[2.5rem] px-10 py-6 flex items-center border shadow-2xl focus-within:ring-4 transition-all ${isDarkMode ? 'bg-white/5 border-white/10 focus-within:border-indigo-500/50 focus-within:ring-indigo-500/10' : 'bg-white border-slate-200 focus-within:border-blue-400/50 focus-within:ring-blue-400/10'}`}>
+          <Search size={28} className="text-indigo-400 mr-6 shrink-0" />
+          <input type="text" className={`bg-transparent text-xl outline-none w-full font-black ${isDarkMode ? 'text-white placeholder:text-slate-600' : 'text-slate-900 placeholder:text-slate-400'} tracking-tight`} value={searchInput} onChange={(e) => setSearchInput(e.target.value)} onKeyDown={handleSearch} placeholder="작품 제목이나 키워드를 입력하세요..." autoFocus />
         </div>
       </div>
 
       {query && !loading && (
-        <h2 className="text-xl font-bold text-gray-800 mb-6 px-2">
-          "<span className="text-blue-600">{query}</span>" 검색 결과
-        </h2>
+        <div className="mb-12 px-6">
+          <h2 className={`text-3xl font-black ${textPrimary} flex items-center gap-4`}>
+            <span className="w-1.5 h-10 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+            "<span className="text-indigo-400">{query}</span>" 검색 결과
+          </h2>
+        </div>
       )}
 
-      {loading ? <div className="flex justify-center py-20 text-gray-400 font-bold items-center gap-3"><Search className="animate-bounce" /> 전 세계 OTT를 검색 중입니다...</div> : 
-      query && results.length === 0 ? <div className="p-20 text-center border-2 border-dashed rounded-3xl text-gray-400 bg-white">해당 키워드에 대한 작품을 찾을 수 없습니다.</div> :
-      !query ? <div className="p-20 text-center border-2 border-dashed rounded-3xl text-gray-400 bg-white">검색창에 제목을 입력해 주세요.</div> : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      {loading ? (
+        <div className="flex flex-col justify-center py-40 text-slate-500 font-black items-center gap-10">
+          <div className="relative">
+            <div className="w-24 h-24 border-2 border-indigo-500/20 rounded-full" />
+            <div className="absolute inset-0 w-24 h-24 border-t-2 border-indigo-500 rounded-full animate-spin" />
+          </div>
+          <p className="text-xl uppercase tracking-[0.3em]">전 세계 OTT를 탐색하는 중...</p>
+        </div>
+      ) : 
+      query && results.length === 0 ? (
+        <div className={`p-32 text-center border-2 border-dashed rounded-[4rem] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600 bg-white/5 border-white/10' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
+          일치하는 검색 결과가 없습니다.
+        </div>
+      ) :
+      !query ? (
+        <div className={`p-32 text-center border-2 border-dashed rounded-[4rem] font-black uppercase tracking-widest ${isDarkMode ? 'text-slate-600 bg-white/5 border-white/10' : 'text-slate-400 bg-slate-50 border-slate-200'}`}>
+          찾으시는 영화나 TV 프로그램을 검색해 보세요.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-10">
           {results.map((item) => {
             const subscribedProviders = getSubscribed(item.providerStatuses);
-            const requiredProviders = getRequired(item.providerStatuses);
 
             return (
-              <div key={item.id} onClick={() => setSelectedItem(item)} className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col hover:shadow-md cursor-pointer hover:-translate-y-1 transition-all duration-200">
-                 <div className="flex h-48 border-b border-gray-50">
-                    <div className="w-32 bg-slate-100 flex-shrink-0">
-                      {item.posterUrl ? <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-xs text-gray-400">No Image</div>}
-                    </div>
-                    <div className="p-5 flex flex-col justify-between w-full">
-                      <div>
-                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md mb-2 inline-block">
-                          {item.mediaType === 'movie' ? 'MOVIE' : 'TV SHOW'}
+              <div key={item.id} onClick={() => setSelectedItem(item)} className={`${cardClass} rounded-[3rem] border overflow-hidden flex flex-col hover:-translate-y-3 transition-all duration-700 cursor-pointer group shadow-2xl`}>
+                 <div className={`flex h-64 border-b ${isDarkMode ? 'border-white/5' : 'border-slate-100'}`}>
+                    <div className="w-40 bg-[#020617] flex-shrink-0 relative overflow-hidden">
+                      {item.posterUrl ? <img src={item.posterUrl} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" /> : <div className="w-full h-full flex items-center justify-center text-xs text-slate-600 uppercase font-black">이미지 없음</div>}
+                      <div className="absolute top-4 left-4">
+                        <span className="text-[10px] font-black text-white bg-indigo-600/60 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-widest">
+                          {item.mediaType === 'movie' ? '영화' : 'TV 시리즈'}
                         </span>
-                        <h3 className="font-bold text-gray-900 leading-tight mb-1 line-clamp-2">{item.title}</h3>
-                        <p className="text-xs text-gray-500">{item.releaseDate?.substring(0, 4) || '미상'}</p>
                       </div>
-                      {isWished(item.id) && <Heart size={16} className="text-pink-500 fill-pink-500 ml-auto" />}
+                    </div>
+                    <div className="p-8 flex flex-col justify-between w-full">
+                      <div>
+                        <h3 className={`font-black ${textPrimary} leading-tight mb-3 line-clamp-2 text-xl group-hover:text-indigo-500 transition-colors tracking-tight`}>{item.title}</h3>
+                        <p className={`text-sm ${textSecondary} font-black tracking-widest uppercase`}>{item.releaseDate?.substring(0, 4) || '날짜 미상'}</p>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' : 'bg-yellow-50 border-yellow-200 text-yellow-700'}`}>
+                          <Star size={14} className="fill-yellow-500" />
+                          <span className="text-sm font-black">{item.rating?.toFixed(1)}</span>
+                        </div>
+                        {isWished(item.id) && <Heart size={22} className="text-pink-500 fill-pink-500" />}
+                      </div>
                     </div>
                  </div>
                  
-                 {/* 사라졌던 OTT 상태 뱃지 완벽 복구 */}
-                 <div className="p-4 bg-slate-50 flex-1 flex flex-col justify-center">
+                 <div className={`p-6 flex-1 flex flex-col justify-center ${isDarkMode ? 'bg-white/5' : 'bg-slate-50/50'}`}>
                    {item.providerStatuses.length === 0 ? (
-                     <p className="text-xs text-gray-400 text-center">현재 한국 스트리밍 서비스 정보가 없습니다.</p>
+                     <p className={`text-[10px] font-black ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} text-center uppercase tracking-[0.3em]`}>스트리밍 정보 없음</p>
                    ) : (
-                     <div className="space-y-3">
-                       {subscribedProviders.length > 0 && (
-                         <div className="flex items-center gap-2">
-                           <CheckCircle2 size={16} className="text-green-500 shrink-0" />
-                           <div className="flex flex-wrap gap-1.5">
-                             {subscribedProviders.map(p => (
-                               <span key={p.providerId} className="text-[11px] font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                 {p.providerName}
-                               </span>
-                             ))}
-                           </div>
-                         </div>
-                       )}
-                       
-                       {requiredProviders.length > 0 && (
-                         <div className="flex items-center gap-2">
-                           <AlertCircle size={16} className="text-gray-400 shrink-0" />
-                           <div className="flex flex-wrap gap-1.5">
-                             {requiredProviders.map(p => (
-                               <span key={p.providerId} className="text-[11px] font-medium bg-white border border-gray-200 text-gray-500 px-2 py-0.5 rounded-md">
-                                 {p.providerName}
-                               </span>
-                             ))}
-                           </div>
-                         </div>
-                       )}
+                     <div className="flex items-center gap-4 px-2">
+                       <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                       <div className="flex flex-wrap gap-2">
+                         {subscribedProviders.length > 0 ? (
+                           subscribedProviders.slice(0, 2).map(p => (
+                             <span key={p.providerId} className={`text-[11px] font-black px-3 py-1 rounded-xl border uppercase tracking-wider ${isDarkMode ? 'bg-white/5 text-slate-400 border-white/10' : 'bg-white text-slate-600 border-slate-200 shadow-sm'}`}>
+                               {p.providerName}
+                             </span>
+                           ))
+                         ) : (
+                           <span className={`text-[11px] font-black ${isDarkMode ? 'text-slate-600' : 'text-slate-400'} uppercase tracking-widest`}>구매 또는 대여 전용</span>
+                         )}
+                       </div>
                      </div>
                    )}
                  </div>
@@ -219,51 +225,54 @@ const SearchPage = () => {
       )}
 
       {selectedItem && (
-        <div onClick={() => setSelectedItem(null)} className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-          <div onClick={(e) => e.stopPropagation()} className="bg-white rounded-3xl overflow-hidden max-w-2xl w-full shadow-2xl relative animate-in zoom-in-95 duration-300">
-            <div className="relative h-72 sm:h-96 bg-black flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0">
-                {selectedItem.posterUrl && <img src={selectedItem.posterUrl} className="w-full h-full object-cover blur-2xl opacity-40 scale-110" alt="bg" />}
+        <div onClick={() => setSelectedItem(null)} className={`fixed inset-0 z-[999] flex items-center justify-center p-6 backdrop-blur-3xl animate-in fade-in duration-500 ${isDarkMode ? 'bg-[#020617]/80' : 'bg-slate-900/40'}`}>
+          <div onClick={(e) => e.stopPropagation()} className={`rounded-[4rem] overflow-hidden max-w-5xl w-full shadow-[0_40px_100px_rgba(0,0,0,0.6)] border relative animate-in zoom-in-95 slide-in-from-bottom-12 duration-700 ${isDarkMode ? 'bg-white/5 backdrop-blur-[80px] border-white/10' : 'bg-white border-slate-200'}`}>
+            <div className="flex flex-col md:flex-row h-full">
+              <div className="md:w-[45%] bg-[#020617] relative group overflow-hidden">
+                {selectedItem.posterUrl ? (
+                  <img src={selectedItem.posterUrl} className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" alt="poster" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-slate-700 font-black uppercase tracking-[0.4em]">이미지 없음</div>
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#020617]/20" />
               </div>
-              {selectedItem.posterUrl ? <img src={selectedItem.posterUrl} className="relative h-[90%] object-contain rounded-lg shadow-2xl border border-white/10" alt="poster" /> : <span className="relative text-white/50 font-bold text-xl">포스터 이미지 없음</span>}
-              <button onClick={() => setSelectedItem(null)} className="absolute top-4 right-4 w-10 h-10 flex-shrink-0 flex items-center justify-center bg-black/40 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all z-50 border border-white/20"><X size={20} strokeWidth={3} /></button>
-            </div>
-            
-            <div className="p-8 bg-white relative">
-              <div className="flex justify-between items-start mb-6 gap-4">
-                <div className="flex-1">
-                  <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-md mb-3 inline-block">
-                    {selectedItem.mediaType === 'movie' ? 'MOVIE' : 'TV SHOW'}
-                  </span>
-                  <h2 className="text-2xl sm:text-3xl font-black text-slate-900 mb-3 tracking-tight leading-tight">{selectedItem.title}</h2>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="text-sm font-semibold text-gray-500">출시: {selectedItem.releaseDate || '미상'}</span>
-                    <div className="flex items-center gap-1.5 bg-yellow-50 px-3 py-1 rounded-full border border-yellow-200">
-                      <Star size={16} className="fill-yellow-500 text-yellow-500" />
-                      <span className="text-sm font-black text-yellow-700">{selectedItem.rating.toFixed(1)}</span>
+              
+              <div className="p-16 md:w-[55%] flex flex-col justify-between relative">
+                <button onClick={() => setSelectedItem(null)} className={`absolute top-8 right-10 p-4 rounded-[1.5rem] transition-all border group ${isDarkMode ? 'bg-white/5 border-white/10 text-slate-500 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-400 hover:text-slate-900'}`}><X size={24} /></button>
+                
+                <div>
+                  <div className="flex items-center gap-4 mb-8">
+                    <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-[0.2em] border ${isDarkMode ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500/20' : 'bg-blue-50 text-blue-600 border-blue-100'}`}>{selectedItem.mediaType === 'movie' ? '영화' : 'TV 시리즈'}</span>
+                    <div className={`flex items-center gap-2 px-4 py-1.5 rounded-xl border ${isDarkMode ? 'bg-yellow-500/10 border-yellow-500/20 text-yellow-500' : 'bg-yellow-50 border-yellow-200 text-yellow-700'}`}>
+                      <Star size={18} className="fill-yellow-500" />
+                      <span className="text-base font-black">{selectedItem.rating.toFixed(1)}</span>
                     </div>
                   </div>
+                  
+                  <h2 className={`text-5xl font-black ${textPrimary} mb-8 tracking-tighter leading-tight drop-shadow-2xl`}>{selectedItem.title}</h2>
+                  
+                  <div className={`mb-10 p-8 rounded-[2.5rem] border shadow-inner ${isDarkMode ? 'bg-white/5 border-white/5' : 'bg-slate-50 border-slate-100'}`}>
+                    <h4 className={`text-[10px] font-black ${textSecondary} uppercase tracking-[0.3em] mb-4`}>줄거리 요약</h4>
+                    <p className={`leading-relaxed font-medium text-lg max-h-48 overflow-y-auto pr-4 scrollbar-hide ${isDarkMode ? 'text-slate-400' : 'text-slate-600'}`}>{selectedItem.overview}</p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="mb-8">
-                <p className="text-slate-600 leading-relaxed text-[15px] bg-slate-50 p-5 rounded-2xl border border-slate-100 max-h-32 overflow-y-auto">{selectedItem.overview}</p>
-              </div>
-
-              <div className="flex gap-3">
-                {getSubscribed(selectedItem.providerStatuses).length > 0 ? (
-                  <button onClick={() => handlePlayDirectly(selectedItem)} className="flex-1 bg-blue-600 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all">
-                    <Play size={20} className="fill-white" /> {getSubscribed(selectedItem.providerStatuses)[0].providerName} 접속하기
+                <div className="flex gap-5 mt-4">
+                  {getSubscribed(selectedItem.providerStatuses).length > 0 ? (
+                    <button onClick={() => handlePlayDirectly(selectedItem)} className={`flex-1 font-black py-6 rounded-[2.5rem] flex items-center justify-center gap-4 shadow-xl active:scale-95 transition-all group ${isDarkMode ? 'bg-white text-[#020617] hover:bg-indigo-50' : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'}`}>
+                      <Play size={28} className={isDarkMode ? "fill-[#020617]" : "fill-white"} />
+                      <span className="text-xl">{getSubscribed(selectedItem.providerStatuses)[0].providerName}에서 시청하기</span>
+                    </button>
+                  ) : (
+                    <div className={`flex-1 font-black py-6 rounded-[2.5rem] flex items-center justify-center gap-4 border uppercase tracking-widest text-sm ${isDarkMode ? 'bg-white/5 text-slate-600 border-white/5' : 'bg-slate-100 text-slate-400 border-slate-200'}`}>
+                      <AlertCircle size={22} /> 구독 정보 없음
+                    </div>
+                  )}
+                  
+                  <button onClick={() => toggleWishlist(selectedItem)} className={`px-12 py-6 font-black rounded-[2.5rem] flex items-center gap-4 border transition-all active:scale-95 ${isWished(selectedItem.id) ? 'bg-pink-500 text-white border-transparent shadow-xl' : 'bg-white/5 text-pink-500 border-white/10 hover:bg-white/10'}`}>
+                    <Heart size={28} className={isWished(selectedItem.id) ? "fill-white" : ""} />
                   </button>
-                ) : (
-                  <button disabled className="flex-1 bg-gray-100 text-gray-400 font-bold py-4 rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed">
-                    <AlertCircle size={20} /> 추가 결제 필요 / 제공되지 않음
-                  </button>
-                )}
-                
-                <button onClick={() => toggleWishlist(selectedItem)} className={`px-8 py-4 font-bold rounded-2xl flex items-center gap-2 border transition-all ${isWished(selectedItem.id) ? 'bg-pink-500 text-white border-transparent' : 'bg-white text-pink-500 border-pink-100 hover:bg-pink-50'}`}>
-                  <Heart size={20} className={isWished(selectedItem.id) ? "fill-white" : ""} /> {isWished(selectedItem.id) ? '찜 완료' : '찜하기'}
-                </button>
+                </div>
               </div>
             </div>
           </div>

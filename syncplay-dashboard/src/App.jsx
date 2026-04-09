@@ -14,6 +14,20 @@ import SearchPage from './pages/SearchPage';
 const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  
+  // 테마 상태 관리 (기본값 다크모드)
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : true;
+  });
+
+  // 테마 변경 함수
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    localStorage.setItem('theme', newMode ? 'dark' : 'light');
+  };
+
   // 로그인, 회원가입, 랜딩 페이지는 사이드바를 보여주지 않습니다.
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/';
   
@@ -23,36 +37,54 @@ const App = () => {
   // 공통적인 아이콘 스타일
   const getIconClass = (path) => {
     const isActive = location.pathname === path;
-    return `p-3 rounded-2xl transition-all duration-300 ${
-      isActive 
-        ? 'text-blue-600 bg-blue-50 shadow-inner' 
-        : 'text-gray-400 hover:text-blue-600 hover:bg-gray-50'
-    }`;
+    if (isDarkMode) {
+      return `p-3 rounded-2xl transition-all duration-300 ${
+        isActive 
+          ? 'text-white bg-white/10 shadow-[0_0_20px_rgba(255,255,255,0.1)]' 
+          : 'text-slate-500 hover:text-white hover:bg-white/5'
+      }`;
+    } else {
+      return `p-3 rounded-2xl transition-all duration-300 ${
+        isActive 
+          ? 'text-blue-600 bg-blue-50 shadow-lg shadow-blue-100/50' 
+          : 'text-slate-400 hover:text-blue-500 hover:bg-slate-100'
+      }`;
+    }
   };
 
+  // 테마별 배경색 설정
+  const bgClass = isDarkMode 
+    ? "bg-[#020617] text-slate-200" 
+    : "bg-[#f8fafc] text-slate-800";
+
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
-      {/* 1. 사이드바 네비게이션 */}
+    <div className={`flex min-h-screen ${bgClass} font-sans relative overflow-hidden transition-colors duration-500`}>
+      {/* 🌌 오로라 배경 오브제 (테마에 따라 색상 변경) */}
+      <div className={`absolute top-[-20%] left-[-10%] w-[800px] h-[800px] ${isDarkMode ? 'bg-indigo-600/20' : 'bg-blue-200/40'} rounded-full blur-[160px] animate-pulse pointer-events-none`} />
+      <div className={`absolute bottom-[-10%] right-[-10%] w-[700px] h-[700px] ${isDarkMode ? 'bg-emerald-600/10' : 'bg-indigo-100/50'} rounded-full blur-[140px] pointer-events-none`} />
+      <div className={`absolute top-[30%] right-[10%] w-[500px] h-[500px] ${isDarkMode ? 'bg-purple-600/15' : 'bg-purple-100/40'} rounded-full blur-[130px] animate-pulse pointer-events-none`} />
+      
+      {/* 1. 사이드바 네비게이션 (Dark/Light Glassmorphism) */}
       {!isAuthPage && (
-        <div className="w-24 bg-white border-r border-gray-100 flex flex-col items-center py-10 sticky top-0 h-screen z-50">
-          <div className="flex flex-col items-center space-y-6 flex-1">
+        <div className={`w-24 ${isDarkMode ? 'bg-black/20' : 'bg-white/60'} backdrop-blur-3xl border-r ${isDarkMode ? 'border-white/5' : 'border-slate-200/50'} flex flex-col items-center py-12 sticky top-0 h-screen z-50 shadow-2xl`}>
+          <div className="flex flex-col items-center space-y-8 flex-1">
             {/* 홈 대시보드 */}
             <Link title="홈 대시보드" to="/home" className={getIconClass('/home')}>
               <Home size={26} />
             </Link>
 
-            <div className="w-12 h-px bg-gray-100" /> {/* 구분선 */}
-
             {/* 글로벌 검색 전용 메뉴 */}
-            <Link title="전체 OTT 검색" to="/search" className={getIconClass('/search')}>
+            <Link title="전체 OTT 통합 검색" to="/search" className={getIconClass('/search')}>
               <Search size={26} strokeWidth={2.5} />
             </Link>
             
-            <Link title="내 영화 목록" to="/movies" className={getIconClass('/movies')}>
+            <div className={`w-10 h-px ${isDarkMode ? 'bg-white/10' : 'bg-slate-200'}`} />
+
+            <Link title="영화 기록" to="/movies" className={getIconClass('/movies')}>
               <Clapperboard size={26} />
             </Link>
             
-            <Link title="내 TV 쇼 목록" to="/tv" className={getIconClass('/tv')}>
+            <Link title="TV 쇼 기록" to="/tv" className={getIconClass('/tv')}>
               <Tv size={26} />
             </Link>
             
@@ -68,55 +100,52 @@ const App = () => {
       )}
 
       {/* 2. 메인 콘텐츠 영역 */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10">
         <div className="flex flex-1 overflow-hidden">
-          <main className="flex-1 overflow-y-auto p-8 lg:p-12">
+          <main className="flex-1 overflow-y-auto p-8 lg:p-12 scrollbar-hide">
             {!isAuthPage && (
-              <div className="flex justify-between items-center mb-10">
-                <h1 className="text-3xl font-extrabold text-gray-950 tracking-tighter">
+              <div className="flex justify-between items-center mb-12">
+                <h1 className={`text-4xl font-black ${isDarkMode ? 'text-white' : 'text-slate-900'} tracking-tight drop-shadow-sm`}>
                   {location.pathname === '/home' ? '홈 대시보드' :
-                   location.pathname === '/movies' ? '내 영화 기록' : 
-                   location.pathname === '/tv' ? '내 TV 쇼 기록' : 
+                   location.pathname === '/movies' ? '영화 기록' : 
+                   location.pathname === '/tv' ? 'TV 쇼 기록' : 
                    location.pathname === '/mypage' ? '마이페이지' : 
-                   location.pathname === '/search' ? '전체 OTT 검색' : '설정'}
+                   location.pathname === '/search' ? '전체 OTT 통합 검색' : '설정'}
                 </h1>
               </div>
             )}
             
             <Routes>
-              <Route path="/" element={<LoginPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/" element={<LoginPage isDarkMode={isDarkMode} />} />
+              <Route path="/login" element={<LoginPage isDarkMode={isDarkMode} />} />
+              <Route path="/signup" element={<SignupPage isDarkMode={isDarkMode} />} />
               
-              <Route path="/home" element={<HomePage />} />
-              {/* searchTerm은 오직 내 목록 필터링 용도로만 사용됩니다 */}
-              <Route path="/movies" element={<MoviesPage searchTerm={searchTerm} />} />
-              <Route path="/tv" element={<TvShowsPage searchTerm={searchTerm} />} />
-              <Route path="/mypage" element={<MyPage />} />
-              <Route path="/settings" element={<SettingsPage />} /> 
-              <Route path="/search" element={<SearchPage />} />
+              <Route path="/home" element={<HomePage isDarkMode={isDarkMode} />} />
+              <Route path="/movies" element={<MoviesPage searchTerm={searchTerm} isDarkMode={isDarkMode} />} />
+              <Route path="/tv" element={<TvShowsPage searchTerm={searchTerm} isDarkMode={isDarkMode} />} />
+              <Route path="/mypage" element={<MyPage isDarkMode={isDarkMode} />} />
+              <Route path="/settings" element={<SettingsPage isDarkMode={isDarkMode} toggleTheme={toggleTheme} />} /> 
+              <Route path="/search" element={<SearchPage isDarkMode={isDarkMode} />} />
               
               <Route path="*" element={<Navigate to="/" />} />
             </Routes>
           </main>
 
-          {/* 3. 우측 퀵 패널 (내 기록 필터링 전용 검색창) */}
+          {/* 3. 우측 퀵 패널 */}
           {!isAuthPage && location.pathname !== '/settings' && location.pathname !== '/mypage' && location.pathname !== '/search' && (
-            <div className="w-80 bg-white border-l border-gray-100 p-8 hidden xl:block overflow-y-auto z-40">
-              <div className="flex items-center space-x-4 mb-10">
-                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold cursor-pointer transition-transform hover:scale-105" onClick={() => navigate('/mypage')}>
+            <div className={`w-80 ${isDarkMode ? 'bg-black/10' : 'bg-white/30'} backdrop-blur-2xl border-l ${isDarkMode ? 'border-white/5' : 'border-slate-200/50'} p-8 hidden xl:block overflow-y-auto z-40`}>
+              <div className="flex items-center space-x-5 mb-12">
+                <div className={`w-12 h-12 rounded-2xl ${isDarkMode ? 'bg-white/5 border border-white/10' : 'bg-blue-100 text-blue-600'} flex items-center justify-center font-bold shadow-inner cursor-pointer transition-all hover:scale-105`} onClick={() => navigate('/mypage')}>
                   U
                 </div>
-                {/* 필터링 전용 검색창 */}
-                <div className="flex-1 bg-slate-100 rounded-2xl px-5 py-3 flex items-center border border-slate-200 focus-within:border-blue-300 focus-within:bg-white transition-all">
-                  <Search size={20} className="text-gray-400 mr-3" />
+                <div className={`flex-1 ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-white/60 border-slate-200'} backdrop-blur-md rounded-2xl px-5 py-3.5 flex items-center border focus-within:border-indigo-500 transition-all shadow-xl`}>
+                  <Search size={18} className="text-slate-500 mr-3" />
                   <input 
                     type="text" 
-                    placeholder="내 시청 목록 필터링..." 
-                    className="bg-transparent text-sm outline-none w-full text-gray-800 placeholder:text-gray-400" 
+                    placeholder="목록 필터링..." 
+                    className={`bg-transparent text-sm outline-none w-full ${isDarkMode ? 'text-white' : 'text-slate-800'} placeholder:text-slate-500 font-medium`} 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    /* 엔터키 이동 기능(onKeyDown) 완전 삭제 */
                   />
                 </div>
               </div>

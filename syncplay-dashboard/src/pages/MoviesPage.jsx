@@ -1,16 +1,21 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { Film } from 'lucide-react';
 import MediaCard from '../components/MediaCard';
 
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const API_BASE_URL = 'http://localhost:8080';
 
-const MoviesPage = ({ searchTerm = '' }) => {
+const MoviesPage = ({ searchTerm = '', isDarkMode }) => {
   const [movies, setMovies] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const currentUser = JSON.parse(localStorage.getItem('user') || 'null');
   const userEmail = currentUser?.email || '';
+
+  // 테마별 색상 설정
+  const textPrimary = isDarkMode ? "text-white" : "text-slate-900";
+  const textMuted = isDarkMode ? "text-slate-500" : "text-slate-400";
 
   const fetchProviderAvailability = useCallback(async (title) => {
     if (!userEmail) return [];
@@ -82,21 +87,27 @@ const MoviesPage = ({ searchTerm = '' }) => {
     }
   };
 
-  // 기존 방식대로 내 목록 안에서만 필터링합니다.
   const filteredMovies = movies.filter((movie) =>
     movie.title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
-    <section className="w-full p-4">
-      <h2 className="text-xl font-bold text-gray-800 mb-6 px-2">내 시청 기록 (영화)</h2>
+    <section className="w-full p-4 animate-in fade-in duration-1000">
+      <div className="flex items-center gap-4 mb-10 px-2">
+        <div className="w-1.5 h-10 bg-indigo-500 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" />
+        {/* 이 부분의 text-white를 ${textPrimary}로 확실히 고쳤습니다. */}
+        <h2 className={`text-3xl font-black ${textPrimary} tracking-tight uppercase`}>영화 보관함</h2>
+      </div>
       
       {filteredMovies.length === 0 ? (
-        <div className="p-20 text-center border-2 border-dashed rounded-3xl text-gray-400">
-          {loading ? "데이터를 불러오는 중..." : "시청 중인 영화가 없습니다."}
+        <div className={`p-32 text-center ${isDarkMode ? 'bg-white/5 border-white/10' : 'bg-slate-50 border-slate-200'} backdrop-blur-3xl rounded-[4rem] border-2 border-dashed flex flex-col items-center gap-6`}>
+          <Film size={64} className={`${isDarkMode ? 'text-slate-700' : 'text-slate-300'} opacity-20`} />
+          <p className={`${textMuted} font-black text-lg`}>
+            {loading ? "데이터를 동기화 중입니다..." : "보관함에 저장된 영화가 없습니다"}
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-8">
           {filteredMovies.map((movie) => (
             <MediaCard 
               key={movie.id} 
@@ -111,6 +122,7 @@ const MoviesPage = ({ searchTerm = '' }) => {
               platform={movie.platform}
               providerStatuses={movie.providerStatuses}
               onDelete={handleDelete}
+              isDarkMode={isDarkMode}
             />
           ))}
         </div>
