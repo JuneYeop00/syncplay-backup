@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Routes, Route, Link, useLocation, Navigate, useNavigate } from 'react-router-dom';
-import { Search, Clapperboard, Tv, Settings, UserCircle } from 'lucide-react';
+import { Search, Clapperboard, Tv, Settings, UserCircle, Home } from 'lucide-react';
 
+import HomePage from './pages/HomePage';
 import MoviesPage from './pages/MoviesPage';
 import TvShowsPage from './pages/TvShowsPage';
 import LoginPage from './pages/LoginPage';
@@ -35,13 +36,18 @@ const App = () => {
       {!isAuthPage && (
         <div className="w-24 bg-white border-r border-gray-100 flex flex-col items-center py-10 sticky top-0 h-screen z-50">
           <div className="flex flex-col items-center space-y-6 flex-1">
+            {/* 홈 대시보드 */}
+            <Link title="홈 대시보드" to="/home" className={getIconClass('/home')}>
+              <Home size={26} />
+            </Link>
+
+            <div className="w-12 h-px bg-gray-100" /> {/* 구분선 */}
+
             {/* 글로벌 검색 전용 메뉴 */}
             <Link title="전체 OTT 검색" to="/search" className={getIconClass('/search')}>
               <Search size={26} strokeWidth={2.5} />
             </Link>
             
-            <div className="w-12 h-px bg-gray-100" /> {/* 구분선 */}
-
             <Link title="내 영화 목록" to="/movies" className={getIconClass('/movies')}>
               <Clapperboard size={26} />
             </Link>
@@ -68,7 +74,8 @@ const App = () => {
             {!isAuthPage && (
               <div className="flex justify-between items-center mb-10">
                 <h1 className="text-3xl font-extrabold text-gray-950 tracking-tighter">
-                  {location.pathname === '/movies' ? '내 영화 기록' : 
+                  {location.pathname === '/home' ? '홈 대시보드' :
+                   location.pathname === '/movies' ? '내 영화 기록' : 
                    location.pathname === '/tv' ? '내 TV 쇼 기록' : 
                    location.pathname === '/mypage' ? '마이페이지' : 
                    location.pathname === '/search' ? '전체 OTT 검색' : '설정'}
@@ -81,6 +88,7 @@ const App = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/signup" element={<SignupPage />} />
               
+              <Route path="/home" element={<HomePage />} />
               {/* searchTerm은 오직 내 목록 필터링 용도로만 사용됩니다 */}
               <Route path="/movies" element={<MoviesPage searchTerm={searchTerm} />} />
               <Route path="/tv" element={<TvShowsPage searchTerm={searchTerm} />} />

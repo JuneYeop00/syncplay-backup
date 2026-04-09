@@ -14,7 +14,7 @@ const LoginPage = () => {
 
     if (savedUser && savedUser.email === email && savedUser.password === password) {
       localStorage.setItem('isLoggedIn', 'true');
-      navigate('/movies');
+      navigate('/home');
     } else {
       alert('이메일 또는 비밀번호가 일치하지 않습니다.');
     }
