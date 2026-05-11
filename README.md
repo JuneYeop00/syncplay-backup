@@ -45,7 +45,8 @@
 WebProject1/
 ├─ extension/ (Chrome Extension)
 │  ├─ manifest.json           # 확장 프로그램 설정 및 권한
-│  ├─ popup.html / popup.js   # 팝업 UI 및 데이터 전송 로직
+│  ├─ popup.html              # 팝업 UI 마크업
+│  ├─ popup.js                # 팝업 제어 및 플랫폼별 추출 실행
 │  ├─ netflix-bridge.js       # 넷플릭스 시청 데이터 추출
 │  ├─ tiving-bridge.js        # 티빙 시청 데이터 추출
 │  ├─ disney-bridge.js        # 디즈니+ 시청 데이터 추출
@@ -55,33 +56,76 @@ WebProject1/
 │  ├─ prime-bridge.js         # Amazon Prime Video 시청 데이터 추출
 │  └─ appletv-bridge.js       # Apple TV+ 시청 데이터 추출
 ├─ syncplay-dashboard/ (React Frontend)
-│  ├─ public/logos/           # OTT별 고화질 로컬 로고 자산 (PNG/SVG)
-│  ├─ src/
-│  │  ├─ components/
-│  │  │  ├─ MediaCard.jsx     # 포스터 및 OTT 로고가 포함된 공통 카드 컴포넌트
-│  │  │  └─ SkeletonCard.jsx  # 로딩 스켈레톤 카드 컴포넌트
-│  │  ├─ pages/
-│  │  │  ├─ LoginPage.jsx     # 로그인 페이지
-│  │  │  ├─ SignupPage.jsx    # 회원가입 페이지
-│  │  │  ├─ HomePage.jsx      # 홈 대시보드 (최근 시청 기록, 구독 현황, 찜 목록)
-│  │  │  ├─ MoviesPage.jsx    # 영화 시청 기록 관리
-│  │  │  ├─ TvShowsPage.jsx   # TV 시리즈 시청 기록 관리
-│  │  │  ├─ SearchPage.jsx    # TMDB 통합 검색 / 트렌딩
-│  │  │  ├─ MyPage.jsx        # 마이페이지 (구독 관리, 프로필)
-│  │  │  └─ Settings.jsx      # 설정 (다크/라이트 모드 등)
-│  │  ├─ App.jsx              # 라우팅 및 전역 상태 관리
-│  │  └─ main.jsx             # React 엔트리 포인트
+│  ├─ index.html              # HTML 엔트리 포인트
+│  ├─ vite.config.js          # Vite 빌드 설정
+│  ├─ tailwind.config.js      # Tailwind CSS 설정
+│  ├─ postcss.config.js       # PostCSS 설정
+│  ├─ eslint.config.js        # ESLint 설정
+│  ├─ public/
+│  │  └─ logos/               # OTT별 로컬 로고 자산
+│  │     ├─ netflix.png
+│  │     ├─ tving.png
+│  │     ├─ disneyplus.svg
+│  │     ├─ coupangplay.png
+│  │     ├─ wavve.png
+│  │     ├─ watcha.png
+│  │     ├─ amazonprime.png
+│  │     └─ appletv.png
+│  └─ src/
+│     ├─ index.css            # 글로벌 스타일 (다크모드 스크롤바 등)
+│     ├─ App.css              # App 레이아웃 스타일
+│     ├─ main.jsx             # React 엔트리 포인트
+│     ├─ App.jsx              # 라우팅 및 전역 상태 관리
+│     ├─ hooks/
+│     │  └─ useTmdbSearch.js  # TMDB 백엔드 검색 커스텀 훅
+│     ├─ components/
+│     │  ├─ MediaCard.jsx     # 포스터 및 OTT 로고가 포함된 공통 카드 컴포넌트
+│     │  └─ SkeletonCard.jsx  # 로딩 스켈레톤 카드 컴포넌트
+│     └─ pages/
+│        ├─ LoginPage.jsx     # 로그인 페이지
+│        ├─ SignupPage.jsx    # 회원가입 페이지
+│        ├─ HomePage.jsx      # 홈 대시보드 (최근 시청 기록, 구독 현황, 찜 목록)
+│        ├─ MoviesPage.jsx    # 영화 시청 기록 관리
+│        ├─ TvShowsPage.jsx   # TV 시리즈 시청 기록 관리
+│        ├─ SearchPage.jsx    # TMDB 통합 검색 / 트렌딩
+│        ├─ MyPage.jsx        # 마이페이지 (구독 관리, 프로필)
+│        └─ Settings.jsx      # 설정 (다크/라이트 모드 등)
 ├─ syncplay-server/ (Spring Boot Backend)
 │  ├─ src/main/java/com/syncplay/server/
-│  │  ├─ Application.java                  # 스프링부트 메인 어플리케이션
-│  │  ├─ UserController.java               # 회원 가입/조회 API
-│  │  ├─ WatchHistoryController.java       # 시청 기록 저장 및 조회 API
-│  │  ├─ UserSubscriptionController.java   # 사용자 구독 플랫폼 관리 API
-│  │  ├─ WishlistController.java           # 찜 목록 관리 API
-│  │  ├─ TmdbSearchController.java         # TMDB 검색 프록시 API
-│  │  ├─ ProviderAvailabilityService.java  # OTT 플랫폼 가용성 체크 로직
-│  │  └─ WebConfig.java                    # CORS 설정
+│  │  ├─ Application.java                    # 스프링부트 메인 어플리케이션
+│  │  ├─ WebConfig.java                      # CORS 설정
+│  │  │
+│  │  ├─ [Controllers]
+│  │  ├─ HelloController.java                # 서버 상태 확인용 테스트 API
+│  │  ├─ UserController.java                 # 회원 가입/조회 API
+│  │  ├─ WatchHistoryController.java         # 시청 기록 저장 및 조회 API
+│  │  ├─ UserSubscriptionController.java     # 사용자 구독 플랫폼 관리 API
+│  │  ├─ WishlistController.java             # 찜 목록 관리 API
+│  │  ├─ TmdbSearchController.java           # TMDB 검색 프록시 API
+│  │  ├─ ProviderAvailabilityController.java # OTT 플랫폼 가용성 조회 API
+│  │  │
+│  │  ├─ [Services]
+│  │  ├─ UserSubscriptionService.java        # 구독 정보 비즈니스 로직
+│  │  ├─ TmdbSearchService.java              # TMDB 검색 비즈니스 로직
+│  │  ├─ ProviderAvailabilityService.java    # OTT 플랫폼 가용성 체크 로직
+│  │  │
+│  │  ├─ [Entities]
+│  │  ├─ User.java                           # 회원 엔티티
+│  │  ├─ WatchHistory.java                   # 시청 기록 엔티티
+│  │  ├─ WishlistItem.java                   # 찜 목록 아이템 엔티티
+│  │  ├─ UserSubscription.java               # 구독 정보 엔티티
+│  │  │
+│  │  ├─ [Repositories]
+│  │  ├─ UserRepository.java                 # 회원 JPA 레포지토리
+│  │  ├─ WatchHistoryRepository.java         # 시청 기록 JPA 레포지토리
+│  │  ├─ WishlistRepository.java             # 찜 목록 JPA 레포지토리
+│  │  ├─ UserSubscriptionRepository.java     # 구독 정보 JPA 레포지토리
+│  │  │
+│  │  └─ [DTOs]
+│  │     └─ ProviderAvailabilityResponse.java # OTT 가용성 응답 DTO
+│  ├─ src/test/java/com/syncplay/server/
+│  │  └─ ApplicationTests.java               # 스프링부트 통합 테스트
 │  └─ src/main/resources/
-│     └─ application.properties            # 서버 포트 및 DB 환경 설정
+│     └─ application.properties              # 서버 포트 및 DB 환경 설정
 └─ README.md
 ```
