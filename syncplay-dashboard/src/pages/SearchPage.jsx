@@ -2,10 +2,11 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, ArrowLeft, AlertCircle, X, Star, Heart, Play, TrendingUp, Flame } from 'lucide-react';
 import SkeletonCard from '../components/SkeletonCard';
+import API_BASE_URL from '../config/api';
 
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const API_BASE_URL = 'http://localhost:8080';
+
 
 const LOGO_MAP = {
   "netflix": "/logos/netflix.png",

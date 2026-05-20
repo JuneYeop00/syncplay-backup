@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
 
 const SignupPage = ({ isDarkMode }) => {
   const [name, setName] = useState('');
@@ -29,7 +30,7 @@ const SignupPage = ({ isDarkMode }) => {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:8080/api/users/signup', {
+      const res = await fetch(`${API_BASE_URL}/api/users/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),

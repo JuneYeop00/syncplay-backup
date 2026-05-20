@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { User, LogOut, Heart, PlayCircle, Clock, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import API_BASE_URL from '../config/api';
 
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -76,7 +77,7 @@ const MyPage = ({ isDarkMode }) => {
       const email = savedUser?.email || '';
       if (!email) return;
       try {
-        const response = await fetch(`http://localhost:8080/api/history?email=${encodeURIComponent(email)}`);
+        const response = await fetch(`${API_BASE_URL}/api/history?email=${encodeURIComponent(email)}`);
         if (response.ok) {
           const data = await response.json();
           const all = data.reverse();
@@ -109,7 +110,7 @@ const MyPage = ({ isDarkMode }) => {
 
   const fetchSubscriptions = async (email) => {
     try {
-      const response = await fetch(`http://localhost:8080/api/users/subscriptions?email=${encodeURIComponent(email)}`);
+      const response = await fetch(`${API_BASE_URL}/api/users/subscriptions?email=${encodeURIComponent(email)}`);
       if (response.ok) {
         const data = await response.json();
         setMySubscriptions(data.subscriptions || []);
@@ -119,7 +120,7 @@ const MyPage = ({ isDarkMode }) => {
 
   const fetchWishlist = async (email) => {
     try {
-      const res = await fetch(`http://localhost:8080/api/wishlist?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${API_BASE_URL}/api/wishlist?email=${encodeURIComponent(email)}`);
       if (!res.ok) return;
       const data = await res.json();
       const LOCAL_LOGOS = [
@@ -174,7 +175,7 @@ const MyPage = ({ isDarkMode }) => {
       : [...mySubscriptions, ottId];
     setMySubscriptions(updatedSubs);
     try {
-      await fetch(`http://localhost:8080/api/users/subscriptions?email=${encodeURIComponent(userInfo.email)}`, {
+      await fetch(`${API_BASE_URL}/api/users/subscriptions?email=${encodeURIComponent(userInfo.email)}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscriptions: updatedSubs })

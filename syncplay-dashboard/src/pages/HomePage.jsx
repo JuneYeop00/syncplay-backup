@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Play, Search, ChevronRight, Heart, Tv, Film } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import SkeletonCard from '../components/SkeletonCard';
+import API_BASE_URL from '../config/api';
 
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
@@ -65,19 +66,19 @@ const HomePage = ({ isDarkMode }) => {
   const fetchAllData = async (email) => {
     setLoading(true);
     try {
-      const subRes = await fetch(`http://localhost:8080/api/users/subscriptions?email=${encodeURIComponent(email)}`);
+      const subRes = await fetch(`${API_BASE_URL}/api/users/subscriptions?email=${encodeURIComponent(email)}`);
       if (subRes.ok) {
         const subData = await subRes.json();
         setMySubscriptions(subData.subscriptions || []);
       }
 
-      const wishRes = await fetch(`http://localhost:8080/api/wishlist?email=${encodeURIComponent(email)}`);
+      const wishRes = await fetch(`${API_BASE_URL}/api/wishlist?email=${encodeURIComponent(email)}`);
       if (wishRes.ok) {
         const wishData = await wishRes.json();
         setWishlist(wishData); // 전체 저장 — 표시는 JSX에서 slice
       }
 
-      const historyRes = await fetch(`http://localhost:8080/api/history?email=${encodeURIComponent(email)}`);
+      const historyRes = await fetch(`${API_BASE_URL}/api/history?email=${encodeURIComponent(email)}`);
       if (historyRes.ok) {
         const historyData = await historyRes.json();
         setTotalHistoryCount(historyData.length);

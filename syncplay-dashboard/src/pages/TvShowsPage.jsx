@@ -2,10 +2,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Tv } from 'lucide-react';
 import MediaCard from '../components/MediaCard';
 import SkeletonCard from '../components/SkeletonCard';
+import API_BASE_URL from '../config/api';
 
 const TMDB_ACCESS_TOKEN = import.meta.env.VITE_TMDB_ACCESS_TOKEN;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
-const API_BASE_URL = 'http://localhost:8080';
 
 const TvShowsPage = ({ searchTerm = '', isDarkMode, sortOrder = 'newest', onCountChange }) => {
   const [tvShows, setTvShows] = useState([]);

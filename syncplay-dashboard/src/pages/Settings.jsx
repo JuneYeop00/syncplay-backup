@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Lock, Sun, Moon, Palette, ChevronRight, X, Eye, EyeOff, Check } from 'lucide-react';
+import API_BASE_URL from '../config/api';
 
 const Settings = ({ isDarkMode, toggleTheme }) => {
   const [modalStep, setModalStep] = useState(null); // null | 'verify' | 'edit'
@@ -87,7 +88,7 @@ const Settings = ({ isDarkMode, toggleTheme }) => {
     }
 
     try {
-      const res = await fetch('http://localhost:8080/api/users/update', {
+      const res = await fetch(`${API_BASE_URL}/api/users/update`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
