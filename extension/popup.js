@@ -1,4 +1,32 @@
-const API_BASE_URL = "http://localhost:8080";
+const API_BASE_URL = "https://syncplay-server-8ovd.onrender.com";
+
+const SYNCPLAY_FRONT_URLS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "https://syncplay-backup.vercel.app",
+];
+
+// Vercel은 기본 도메인 외에도 preview/deployment 주소가 생길 수 있어서 hostname 기준으로도 검사
+function isSyncPlayFrontTabUrl(url) {
+  try {
+    if (!url) return false;
+
+    if (SYNCPLAY_FRONT_URLS.some((frontUrl) => url.startsWith(frontUrl))) {
+      return true;
+    }
+
+    const { hostname } = new URL(url);
+
+    return (
+      hostname === "syncplay-backup.vercel.app" ||
+      (hostname.startsWith("syncplay-backup-") && hostname.endsWith(".vercel.app"))
+    );
+  } catch (e) {
+    return false;
+  }
+}
 
 // 플랫폼별 bridge 파일 매핑
 const PLATFORM_BRIDGE_FILES = {
@@ -6,28 +34,18 @@ const PLATFORM_BRIDGE_FILES = {
   DisneyPlus: "disney-bridge.js",
   CoupangPlay: "coupang-bridge.js",
   Watcha: "watcha-bridge.js",
-  Wave: "wave-bridge.js",
-  TVING: "tiving-bridge.js"
+  Wavve: "wave-bridge.js",
+  TVING: "tiving-bridge.js",
 };
 
 // 팝업 버튼 클릭 시 실행
 document.getElementById("extractBtn").addEventListener("click", handleExtract);
 
-// SyncPlay 프론트 탭들 중 localStorage.user.email 이 실제로 있는 탭을 찾음
-async function getUserEmailFromSyncPlayTab() {
+// SyncPlay 프론트 탭들 중 localStorage.user 정보가 실제로 있는 탭을 찾음
+async function getUserFromSyncPlayTab() {
   try {
     const tabs = await chrome.tabs.query({});
-
-    const syncplayTabs = tabs.filter((tab) => {
-      if (!tab.url) return false;
-
-      return (
-        tab.url.startsWith("http://localhost:5173") ||
-        tab.url.startsWith("http://127.0.0.1:5173") ||
-        tab.url.startsWith("http://localhost:3000") ||
-        tab.url.startsWith("http://127.0.0.1:3000")
-      );
-    });
+    const syncplayTabs = tabs.filter((tab) => isSyncPlayFrontTabUrl(tab.url));
 
     for (const tab of syncplayTabs) {
       if (!tab.id) continue;
@@ -38,27 +56,34 @@ async function getUserEmailFromSyncPlayTab() {
           func: () => {
             try {
               const raw = localStorage.getItem("user");
-              if (!raw) return "";
+              if (!raw) return null;
 
               const user = JSON.parse(raw);
-              return user?.email || "";
+
+              return {
+                email: user?.email || "",
+                name: user?.name || "",
+              };
             } catch (e) {
-              return "";
+              return null;
             }
           },
         });
 
-        const email = results?.[0]?.result || "";
-        if (email) return email;
+        const user = results?.[0]?.result || null;
+
+        if (user?.email) {
+          return user;
+        }
       } catch (e) {
         console.error("탭 검사 실패:", tab.url, e);
       }
     }
 
-    return "";
+    return null;
   } catch (e) {
-    console.error("사용자 이메일 읽기 실패:", e);
-    return "";
+    console.error("사용자 정보 읽기 실패:", e);
+    return null;
   }
 }
 
@@ -106,14 +131,17 @@ async function handleExtract() {
       return;
     }
 
-    // SyncPlay 프론트 탭에서 로그인 이메일 읽기
-    const userEmail = await getUserEmailFromSyncPlayTab();
+    // SyncPlay 프론트 탭에서 로그인 사용자 정보 읽기
+    const loginUser = await getUserFromSyncPlayTab();
 
-    if (!userEmail) {
+    if (!loginUser?.email) {
       resultDiv.innerText =
-        "SyncPlay 프론트 탭에서 로그인 사용자 이메일을 찾지 못했습니다. 프론트(localhost:5173 또는 3000)를 열고 로그인한 뒤 다시 시도해주세요.";
+        "SyncPlay 대시보드 탭에서 로그인 사용자 정보를 찾지 못했습니다. https://syncplay-backup.vercel.app 또는 로컬 프론트를 열고 로그인한 뒤 다시 시도해주세요.";
       return;
     }
+
+    const userEmail = loginUser.email;
+    const userDisplayName = loginUser.name || loginUser.email;
 
     // 서버로 보낼 payload 구성
     const payload = {
@@ -140,7 +168,7 @@ async function handleExtract() {
       resultDiv.innerHTML = `
         <div style="color: #2563eb; font-weight: bold;">✅ 전송 성공!</div>
         <div style="font-size: 13px; margin-top: 5px;">
-          👤 사용자: ${payload.userEmail}<br>
+          👤 사용자: ${userDisplayName}<br>
           🎬 제목: ${payload.title}<br>
           📝 상세: ${payload.subTitle || "없음"}<br>
           📊 진도: ${payload.progress}%
